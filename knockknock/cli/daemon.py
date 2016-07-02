@@ -68,7 +68,7 @@ def handleKnocks(output, profiles, config):
 
     knockWatcher.tailAndProcess()
 
-def main(argv):
+def main(*argv):
     checkPrivileges()
     checkConfiguration()
 
@@ -91,4 +91,4 @@ def main(argv):
         handleFirewall(os.fdopen(input, 'r'), config)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(*sys.argv[1:])

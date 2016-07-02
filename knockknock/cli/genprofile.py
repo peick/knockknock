@@ -58,7 +58,7 @@ def createDirectory(profileName):
     if not os.path.isdir(PROFILES_DIR + profileName):
         os.mkdir(PROFILES_DIR + profileName)
 
-def main(argv):
+def main(*argv):
 
     if len(argv) != 2:
         usage()
@@ -82,4 +82,4 @@ def main(argv):
     print "Keys successfully generated in " + PROFILES_DIR + profileName
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(*sys.argv[1:])

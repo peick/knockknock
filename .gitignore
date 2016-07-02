@@ -2,5 +2,7 @@
 .idea
 .*.swp
 MANIFEST
-dist
+
+build/
+dist/
 knockknock.egg-info/

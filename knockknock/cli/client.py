@@ -88,7 +88,7 @@ def existsInPath(command):
 
     return None
 
-def main(argv):
+def main(*argv):
     (port, host) = parseArguments(argv)
     verifyPermissions()
 
@@ -122,4 +122,4 @@ def main(argv):
         sys.exit(3)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(*sys.argv[1:])

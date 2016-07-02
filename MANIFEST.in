@@ -1,0 +1,3 @@
+include CHANGELOG COPYING INSTALL
+include minimal-firewall.sh
+recursive-include etc *
