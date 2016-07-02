@@ -1,5 +1,5 @@
 
-from EndpointConnection import EndpointConnection
+from endpoint_connection import EndpointConnection
 
 import subprocess
 import time
@@ -24,7 +24,7 @@ class KnockingEndpointConnection(EndpointConnection):
         port       = pack('!H', int(port))
         packetData = profile.encrypt(port)
         knockPort  = profile.getKnockPort()
-        
+
         idField, seqField, ackField, winField = unpack('!HIIH', packetData)
 
         command = "hping3 -q -S -c 1 -p " + str(knockPort) + " -N " + str(idField) + " -w " + str(winField) + " -M " + str(seqField) + " -L " + str(ackField) + " " + host;

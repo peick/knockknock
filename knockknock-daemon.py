@@ -25,12 +25,12 @@ USA
 
 import os, sys, pwd, grp
 
-from knockknock.LogEntry import LogEntry
-from knockknock.LogFile import LogFile
-from knockknock.Profiles import Profiles
-from knockknock.PortOpener import PortOpener
-from knockknock.DaemonConfiguration import DaemonConfiguration
-from knockknock.KnockWatcher import KnockWatcher
+from knockknock.log_entry import LogEntry
+from knockknock.log_file import LogFile
+from knockknock.profiles import Profiles
+from knockknock.port_opener import PortOpener
+from knockknock.daemon_configuration import DaemonConfiguration
+from knockknock.knock_watcher import KnockWatcher
 
 import knockknock.daemonize
 
@@ -62,7 +62,7 @@ def handleFirewall(input, config):
 
 def handleKnocks(output, profiles, config):
     dropPrivileges()
-    
+
     logFile      = LogFile('/var/log/kern.log')
     portOpener   = PortOpener(output, config.getDelay())
     knockWatcher = KnockWatcher(config, logFile, profiles, portOpener)
@@ -90,6 +90,6 @@ def main(argv):
     else:
         os.close(output)
         handleFirewall(os.fdopen(input, 'r'), config)
-                
+
 if __name__ == '__main__':
     main(sys.argv[1:])

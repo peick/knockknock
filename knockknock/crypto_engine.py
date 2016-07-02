@@ -16,10 +16,15 @@
 # USA
 #
 
-import os, hmac, hashlib
-from MacFailedException import MacFailedException
-from Crypto.Cipher import AES
+import os
+import hmac
+import hashlib
 from struct import *
+
+from Crypto.Cipher import AES
+
+from mac_failed_exception import MacFailedException
+
 
 class CryptoEngine:
 
@@ -64,13 +69,13 @@ class CryptoEngine:
             try:
                 counterCrypt = self.encryptCounter(self.counter + x)
                 decrypted    = str()
-                
+
                 for i in range((len(encryptedData))):
                     decrypted += chr(ord(encryptedData[i]) ^ ord(counterCrypt[i]))
-                    
+
                 port = decrypted[:2]
                 mac  = decrypted[2:]
-                    
+
                 self.verifyMac(port, mac)
                 self.counter += x + 1
 

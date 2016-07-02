@@ -24,8 +24,8 @@ USA
 
 import os, sys, asyncore, socket
 
-from knockknock.Profiles import Profiles
-from knockknock.proxy.SocksRequestHandler import SocksRequestHandler
+from knockknock.profiles import Profiles
+from knockknock.proxy.socks_request_handler import SocksRequestHandler
 
 import knockknock.daemonize
 
@@ -52,7 +52,7 @@ def getProfiles():
     homedir  = os.path.expanduser('~')
     profiles = Profiles(homedir + '/.knockknock/')
     profiles.resolveNames()
-    
+
     return profiles
 
 def checkPrivileges():
@@ -68,18 +68,18 @@ def checkProfiles():
         sys.exit(2)
 
 def main(argv):
-    
+
     if len(argv) != 1:
         usage()
-        
+
     checkPrivileges()
     checkProfiles()
 
-    profiles = getProfiles()        
+    profiles = getProfiles()
     server   = ProxyServer(int(argv[0]), profiles)
 
     knockknock.daemonize.createDaemon()
-    
+
     asyncore.loop(use_poll=True)
 
 if __name__ == '__main__':

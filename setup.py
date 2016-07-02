@@ -8,7 +8,7 @@ if sys.argv[1] != "sdist":
     shutil.copyfile("knockknock.py", "knockknock/knockknock")
 
 setup  (name         = 'knockknock',
-        version      = '0.8',
+        version      = '0.9a1',
         description  = 'A cryptographic single-packet port-knocker.',
         author       = 'Moxie Marlinspike',
         author_email = 'moxie@thoughtcrime.org',
@@ -19,8 +19,8 @@ setup  (name         = 'knockknock',
                         'knockknock/knockknock-genprofile',
                         'knockknock/knockknock-proxy',
                         'knockknock/knockknock'],
-        data_files   = [("", ["minimal-firewall.sh", "knockknock-daemon.py", 
-                              "knockknock-genprofile.py", "knockknock-proxy.py", 
+        data_files   = [("", ["minimal-firewall.sh", "knockknock-daemon.py",
+                              "knockknock-genprofile.py", "knockknock-proxy.py",
                               "knockknock.py"]),
                         ('share/knockknock', ['README', 'INSTALL', 'COPYING']),
                         ('/etc/knockknock.d/', ['config'])]

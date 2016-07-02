@@ -18,8 +18,9 @@
 
 import syslog
 
-from LogEntry import LogEntry
-from MacFailedException import MacFailedException
+from log_entry import LogEntry
+from mac_failed_exception import MacFailedException
+
 
 class KnockWatcher:
 
@@ -40,7 +41,7 @@ class KnockWatcher:
                         ciphertext = logEntry.getEncryptedData()
                         port       = profile.decrypt(ciphertext, self.config.getWindow())
                         sourceIP   = logEntry.getSourceIP()
-                    
+
                         self.portOpener.open(sourceIP, port)
                         syslog.syslog("Received authenticated port-knock for port " + str(port) + " from " + sourceIP)
                     except MacFailedException:

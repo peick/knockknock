@@ -23,8 +23,8 @@ USA
 """
 
 import os, sys
-from knockknock.Profiles import Profiles
-from knockknock.Profile  import Profile
+from knockknock.profiles import Profiles
+from knockknock.profile  import Profile
 
 DAEMON_DIR   = '/etc/knockknock.d/'
 PROFILES_DIR = DAEMON_DIR + 'profiles/'
@@ -42,7 +42,7 @@ def checkPortConflict(knockPort):
     if (not os.path.isdir(PROFILES_DIR)):
         return
 
-    profiles        = Profiles(PROFILES_DIR)    
+    profiles        = Profiles(PROFILES_DIR)
     matchingProfile = profiles.getProfileForPort(knockPort)
 
     if (matchingProfile != None):
@@ -54,18 +54,18 @@ def createDirectory(profileName):
 
     if not os.path.isdir(PROFILES_DIR):
         os.mkdir(PROFILES_DIR)
-    
+
     if not os.path.isdir(PROFILES_DIR + profileName):
         os.mkdir(PROFILES_DIR + profileName)
 
 def main(argv):
-    
+
     if len(argv) != 2:
         usage()
 
     profileName = argv[0]
     knockPort   = argv[1]
-        
+
     checkProfile(profileName)
     checkPortConflict(knockPort)
     createDirectory(profileName)

@@ -22,7 +22,8 @@ import binascii
 import stat
 from struct import *
 
-from CryptoEngine import CryptoEngine
+from crypto_engine import CryptoEngine
+
 
 class Profile:
 
@@ -59,7 +60,7 @@ class Profile:
         return self.ipAddressList
 
     def setIPAddrs(self, ipAddressList):
-        self.ipAddressList = ipAddressList        
+        self.ipAddressList = ipAddressList
 
     def getName(self):
         return self.name
@@ -102,17 +103,17 @@ class Profile:
     def loadConfig(self):
         config = ConfigParser.SafeConfigParser()
         config.read(self.directory + "/config")
-        
+
         return config.get('main', 'knock_port')
 
     def loadKey(self, keyFile):
         file = open(keyFile, 'r')
-        key  = binascii.a2b_base64(file.readline())        
+        key  = binascii.a2b_base64(file.readline())
 
         file.close()
         return key
 
-    def storeCipherKey(self):        
+    def storeCipherKey(self):
         self.storeKey(self.cipherKey, self.directory + "/cipher.key")
 
     def storeMacKey(self):
@@ -156,5 +157,5 @@ class Profile:
     def printHex(self, val):
         for c in val:
             print "%#x" % ord(c),
-            
+
         print ""
