@@ -1,4 +1,6 @@
 *.pyc
 .idea
+.*.swp
 MANIFEST
 dist
+knockknock.egg-info/
