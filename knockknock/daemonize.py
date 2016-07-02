@@ -4,7 +4,7 @@ Configurable daemon behaviors:
 
    1.) The current working directory set to the "/" directory.
    2.) The current file creation mode mask set to 0.
-   3.) Close all open files (1024). 
+   3.) Close all open files (1024).
    4.) Redirect standard I/O streams to "/dev/null".
 
 A failed call to fork() now raises an exception.
@@ -15,13 +15,13 @@ References:
          http://www.erlenstar.demon.co.uk/unix/faq_toc.html
 """
 
+import os               # Miscellaneous OS interfaces.
+
 __author__    = "Chad J. Schroeder"
 __copyright__ = "Copyright (C) 2005 Chad J. Schroeder"
 __revision__  = "$Id$"
 __version__   = "0.2"
 
-import os               # Miscellaneous OS interfaces.
-import sys              # System-specific parameters and functions.
 
 UMASK   = 0
 WORKDIR = "/"
@@ -63,7 +63,7 @@ def createDaemon():
 #   maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
 #   if (maxfd == resource.RLIM_INFINITY):
 #      maxfd = MAXFD
-  
+
    # Iterate through and close all file descriptors.
 #   for fd in range(0, maxfd):
 #      try:

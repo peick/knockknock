@@ -21,12 +21,14 @@ USA
 
 """
 
-import time, os, sys
 import getopt
+import os
+import struct
 import subprocess
+import sys
 
-from struct import *
 from knockknock.profile import Profile
+
 
 def usage():
     print "Usage: knockknock.py -p <portToOpen> <host>"
@@ -91,11 +93,11 @@ def main(argv):
     verifyPermissions()
 
     profile      = getProfile(host)
-    port         = pack('!H', int(port))
+    port         = struct.pack('!H', int(port))
     packetData   = profile.encrypt(port)
     knockPort    = profile.getKnockPort()
 
-    (idField, seqField, ackField, winField) = unpack('!HIIH', packetData)
+    (idField, seqField, ackField, winField) = struct.unpack('!HIIH', packetData)
 
     hping = existsInPath("hping3")
 

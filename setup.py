@@ -1,5 +1,8 @@
-import sys, os, shutil
-from distutils.core import setup, Extension
+import sys
+import os
+import shutil
+from distutils.core import setup
+
 
 if sys.argv[1] != "sdist":
     shutil.copyfile("knockknock-daemon.py", "knockknock/knockknock-daemon")

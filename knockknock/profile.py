@@ -16,11 +16,10 @@
 # USA
 #
 
-import os, string
-import ConfigParser
 import binascii
+import os
 import stat
-from struct import *
+import ConfigParser
 
 from crypto_engine import CryptoEngine
 

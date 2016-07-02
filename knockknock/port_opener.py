@@ -16,8 +16,9 @@
 # USA
 #
 
-import os, syslog, time
+import os
 import subprocess
+import syslog
 
 from rule_timer import RuleTimer
 

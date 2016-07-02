@@ -16,7 +16,6 @@
 # USA
 #
 
-import os
 import ConfigParser
 
 class DaemonConfiguration:

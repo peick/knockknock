@@ -16,10 +16,9 @@
 # USA
 #
 
-import os
 import hmac
 import hashlib
-from struct import *
+import struct
 
 from Crypto.Cipher import AES
 
@@ -47,7 +46,7 @@ class CryptoEngine:
             raise MacFailedException, "MAC Doesn't Match!"
 
     def encryptCounter(self, counter):
-        counterBytes = pack('!IIII', 0, 0, 0, counter)
+        counterBytes = struct.pack('!IIII', 0, 0, 0, counter)
         return self.cipher.encrypt(counterBytes)
 
     def encrypt(self, plaintextData):
@@ -82,7 +81,7 @@ class CryptoEngine:
                 self.profile.setCounter(self.counter)
                 self.profile.storeCounter()
 
-                return int(unpack("!H", port)[0])
+                return int(struct.unpack("!H", port)[0])
 
             except MacFailedException:
                 pass

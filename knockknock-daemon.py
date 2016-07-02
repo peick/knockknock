@@ -25,7 +25,6 @@ USA
 
 import os, sys, pwd, grp
 
-from knockknock.log_entry import LogEntry
 from knockknock.log_file import LogFile
 from knockknock.profiles import Profiles
 from knockknock.port_opener import PortOpener

@@ -1,6 +1,5 @@
-import asynchat, asyncore
-import socket, string
-from struct import *
+import asynchat
+import struct
 
 from endpoint_connection import EndpointConnection
 from knocking_endpoint_connection import KnockingEndpointConnection
@@ -35,7 +34,7 @@ class SocksRequestHandler(asynchat.async_chat):
         for segment in quad:
             response = response + chr(int(segment))
 
-        response = response + pack('!H', int(localPort))
+        response = response + struct.pack('!H', int(localPort))
 
         self.push(response)
 

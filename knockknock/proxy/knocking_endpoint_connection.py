@@ -1,10 +1,8 @@
-
-from endpoint_connection import EndpointConnection
-
+import struct
 import subprocess
 import time
 
-from struct import *
+from endpoint_connection import EndpointConnection
 
 class KnockingEndpointConnection(EndpointConnection):
 
@@ -21,11 +19,11 @@ class KnockingEndpointConnection(EndpointConnection):
         EndpointConnection.reconnect(self)
 
     def sendKnock(self, profile, host, port):
-        port       = pack('!H', int(port))
+        port       = struct.pack('!H', int(port))
         packetData = profile.encrypt(port)
         knockPort  = profile.getKnockPort()
 
-        idField, seqField, ackField, winField = unpack('!HIIH', packetData)
+        idField, seqField, ackField, winField = struct.unpack('!HIIH', packetData)
 
         command = "hping3 -q -S -c 1 -p " + str(knockPort) + " -N " + str(idField) + " -w " + str(winField) + " -M " + str(seqField) + " -L " + str(ackField) + " " + host;
         command = command.split()

@@ -16,7 +16,9 @@
 # USA
 #
 
-import os, socket
+import os
+import socket
+
 from profile import Profile
 
 class Profiles:
