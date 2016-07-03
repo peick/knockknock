@@ -22,7 +22,11 @@ USA
 
 """
 
-import os, sys, asyncore, socket
+import argparse
+import asyncore
+import os
+import socket
+import sys
 
 from knockknock.profiles import Profiles
 from knockknock.proxy.socks_request_handler import SocksRequestHandler
@@ -44,9 +48,13 @@ class ProxyServer(asyncore.dispatcher):
         SocksRequestHandler(conn, self.profiles)
 
 
-def usage():
-    print "knockknock-proxy <listenPort>"
-    sys.exit(3)
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('port', metavar='LISTEN_PORT', type=int)
+
+    args = parser.parse_args()
+
+    return args.port
 
 def getProfiles():
     homedir  = os.path.expanduser('~')
@@ -58,7 +66,7 @@ def getProfiles():
 def checkPrivileges():
     if not os.geteuid() == 0:
         print "\nSorry, knockknock-proxy has to be run as root.\n"
-        usage()
+        sys.exit(2)
 
 def checkProfiles():
     homedir = os.path.expanduser('~')
@@ -67,20 +75,17 @@ def checkProfiles():
         print "Error: you need to setup your profiles in " + homedir + "/.knockknock/"
         sys.exit(2)
 
-def main(*argv):
-
-    if len(argv) != 1:
-        usage()
-
+def main():
+    port = parseArguments()
     checkPrivileges()
     checkProfiles()
 
     profiles = getProfiles()
-    server   = ProxyServer(int(argv[0]), profiles)
+    server   = ProxyServer(port, profiles)
 
     knockknock.daemonize.createDaemon()
 
     asyncore.loop(use_poll=True)
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    main()

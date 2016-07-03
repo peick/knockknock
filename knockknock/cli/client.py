@@ -21,7 +21,7 @@ USA
 
 """
 
-import getopt
+import argparse
 import os
 import struct
 import subprocess
@@ -30,34 +30,14 @@ import sys
 from knockknock.profile import Profile
 
 
-def usage():
-    print "Usage: knockknock.py -p <portToOpen> <host>"
-    sys.exit(2)
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--port', type=int)
+    parser.add_argument('host', help='Address of the knockknock server')
 
-def parseArguments(argv):
-    try:
-        port       = 0
-        host       = ""
-        opts, args = getopt.getopt(argv, "h:p:")
+    args = parser.parse_args()
 
-        for opt, arg in opts:
-            if opt in ("-p"):
-                port = arg
-            else:
-                usage()
-
-        if len(args) != 1:
-            usage()
-        else:
-            host = args[0]
-
-    except getopt.GetoptError:
-        usage()
-
-    if port == 0 or host == "":
-        usage()
-
-    return (port, host)
+    return (args.port, args.host)
 
 def getProfile(host):
     homedir = os.path.expanduser('~')
@@ -88,8 +68,8 @@ def existsInPath(command):
 
     return None
 
-def main(*argv):
-    (port, host) = parseArguments(argv)
+def main():
+    (port, host) = parseArguments()
     verifyPermissions()
 
     profile      = getProfile(host)
@@ -122,4 +102,4 @@ def main(*argv):
         sys.exit(3)
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    main()

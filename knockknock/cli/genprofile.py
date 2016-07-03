@@ -22,16 +22,24 @@ USA
 
 """
 
-import os, sys
+import argparse
+import os
+import sys
+
 from knockknock.profiles import Profiles
 from knockknock.profile  import Profile
 
 DAEMON_DIR   = '/etc/knockknock.d/'
 PROFILES_DIR = DAEMON_DIR + 'profiles/'
 
-def usage():
-    print "knockknock-genprofile <profileName> <knockPort>"
-    sys.exit(3)
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('port', metavar='KNOCK_PORT', type=int)
+    parser.add_argument('profile', metavar='PROFILE_NAME')
+
+    args = parser.parse_args()
+
+    return (args.port, args.profile)
 
 def checkProfile(profileName):
     if (os.path.isdir(PROFILES_DIR + profileName)):
@@ -58,13 +66,8 @@ def createDirectory(profileName):
     if not os.path.isdir(PROFILES_DIR + profileName):
         os.mkdir(PROFILES_DIR + profileName)
 
-def main(*argv):
-
-    if len(argv) != 2:
-        usage()
-
-    profileName = argv[0]
-    knockPort   = argv[1]
+def main():
+    (profileName, knockPort) = parseArguments()
 
     checkProfile(profileName)
     checkPortConflict(knockPort)
@@ -82,4 +85,4 @@ def main(*argv):
     print "Keys successfully generated in " + PROFILES_DIR + profileName
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    main()
