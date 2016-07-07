@@ -107,7 +107,14 @@ class Profile:
         self._store_key(self._mac_key, os.path.join(self._directory, 'mac.key'))
 
 
-    def store_counter(self):
+    def store_counter(self, new_value=None):
+        if new_value is not None:
+            self._counter = new_value
+
+        self._store_counter()
+
+
+    def _store_counter(self):
         # Privsep bullshit...
         if self._counter_file == None:
             self._counter_file = open(os.path.join(self._directory, 'counter'), 'w')

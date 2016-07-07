@@ -61,8 +61,7 @@ class CryptoEngine:
         for i in range((len(plaintext_data))):
             encrypted += chr(ord(plaintext_data[i]) ^ ord(counter_crypt[i]))
 
-        self._profile.counter = self._counter
-        self._profile.store_counter()
+        self._profile.store_counter(self._counter)
 
         return encrypted
 
@@ -82,8 +81,7 @@ class CryptoEngine:
                 self._verify_mac(port, mac)
                 self._counter += x + 1
 
-                self._profile.counter = self._counter
-                self._profile.store_counter()
+                self._profile.store_counter(self._counter)
 
                 return int(struct.unpack("!H", port)[0])
 

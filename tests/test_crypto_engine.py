@@ -20,18 +20,16 @@ def engine(profile):
 
 
 def test_encrypt(profile, engine):
-    profile.should_receive('store_counter').with_args().once()
+    profile.should_receive('store_counter').with_args(43).once()
 
     result = engine.encrypt(_PORT_STRING)
-    assert profile.counter == 43
     assert result == _ENCRYPTED
 
 
 def test_decrypt(profile, engine):
-    profile.should_receive('store_counter').with_args().once()
+    profile.should_receive('store_counter').with_args(43).once()
 
     result = engine.decrypt(_ENCRYPTED, 16)
-    assert profile.counter == 43
     assert result == _PORT
 
 
