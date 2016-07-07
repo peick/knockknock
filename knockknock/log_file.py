@@ -19,32 +19,34 @@
 import os
 import time
 
+
 class LogFile:
+    def __init__(self, path):
+        self._path = path
 
-    def __init__(self, file):
-        self.file = file
 
-    def checkForFileRotate(self, fd):
-        freshFile = open(self.file)
+    def _check_for_file_rotate(self, fd):
+        fresh_file = open(self._path)
 
-        if (os.path.sameopenfile(freshFile.fileno(), fd.fileno())):
-            freshFile.close()
+        if os.path.sameopenfile(fresh_file.fileno(), fd.fileno()):
+            fresh_file.close()
             return fd
         else:
             fd.close()
-            return freshFile
+            return fresh_file
+
 
     def tail(self):
-        fd = open(self.file)
+        fd = open(self._path)
         fd.seek(0, os.SEEK_END)
 
         while True:
-            fd    = self.checkForFileRotate(fd)
+            fd    = self._check_for_file_rotate(fd)
             where = fd.tell()
             line  = fd.readline()
 
             if not line:
-                time.sleep(.25)
+                time.sleep(0.25)
                 fd.seek(where)
             else:
                 yield line

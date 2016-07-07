@@ -23,29 +23,36 @@ from mac_failed_exception import MacFailedException
 
 
 class KnockWatcher:
+    def __init__(self, config, log_file, profiles, port_opener):
+        self._config      = config
+        self._log_file    = log_file
+        self._profiles    = profiles
+        self._port_opener = port_opener
 
-    def __init__(self, config, logFile, profiles, portOpener):
-        self.config     = config
-        self.logFile    = logFile
-        self.profiles   = profiles
-        self.portOpener = portOpener
 
-    def tailAndProcess(self):
-        for line in self.logFile.tail():
+    def tail_and_process(self):
+        for line in self._log_file.tail():
             try:
-                logEntry = LogEntry(line)
-                profile  = self.profiles.getProfileForPort(logEntry.getDestinationPort())
+                log_entry = LogEntry(line)
 
-                if (profile != None):
+                if not log_entry.is_valid_tcp_packet():
+                    continue
+
+                port      = log_entry.get_destination_port()
+                profile   = self._profiles.get_profile_for_port(port)
+
+                if profile:
+                    print "got knock attempt: %r" % log_entry
                     try:
-                        ciphertext = logEntry.getEncryptedData()
-                        port       = profile.decrypt(ciphertext, self.config.getWindow())
-                        sourceIP   = logEntry.getSourceIP()
+                        ciphertext = log_entry.get_encrypted_data()
+                        window     = self._config.window
+                        port       = profile.decrypt(ciphertext, window)
+                        source_ip  = log_entry.get_source_ip()
 
-                        self.portOpener.open(sourceIP, port)
-                        syslog.syslog("Received authenticated port-knock for port " + str(port) + " from " + sourceIP)
+                        self._port_opener.open(source_ip, port)
+                        syslog.syslog("Received authenticated port-knock for port " + str(port) + " from " + source_ip)
                     except MacFailedException:
                         pass
             except:
-#                print "Unexpected error:", sys.exc_info()
-                syslog.syslog("knocknock skipping unrecognized line.")
+                syslog.syslog("knocknock skipping unrecognized line: %s" % line[:120])
+

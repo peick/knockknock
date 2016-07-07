@@ -30,76 +30,89 @@ import sys
 from knockknock.profile import Profile
 
 
-def parseArguments():
+def _parse_arguments():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config-dir',
+                        dest='config_dir',
+                        default='~/.knockknock',
+                        help='Defaults to ~/.knockknock')
     parser.add_argument('-p', '--port', type=int)
     parser.add_argument('host', help='Address of the knockknock server')
 
     args = parser.parse_args()
+    args.config_dir = os.path.expanduser(args.config_dir)
 
-    return (args.port, args.host)
+    return (args.port, args.host, args.config_dir)
 
-def getProfile(host):
-    homedir = os.path.expanduser('~')
 
-    if not os.path.isdir(homedir + '/.knockknock/'):
-        print "Error: you need to setup your profiles in " + homedir + '/.knockknock/'
+def _get_profile(host, config_dir):
+    profiles_dir = os.path.join(config_dir, 'profiles')
+    hostdir      = os.path.join(profiles_dir, host)
+
+    if not os.path.isdir(config_dir):
+        print "Error: you need to setup your profiles in %s" % (config_dir, )
         sys.exit(2)
 
-    if not os.path.isdir(homedir + '/.knockknock/' + host):
-        print 'Error: profile for host ' + host + ' not found at ' + homedir + '/.knockknock/' + host
+    if not os.path.isdir(hostdir):
+        print 'Error: profile for host %s not found at %s' % (host, hostdir)
         sys.exit(2)
 
-    return Profile(homedir + '/.knockknock/' + host)
+    return Profile(hostdir)
 
-def verifyPermissions():
+
+def _verify_permissions():
     if os.getuid() != 0:
         print 'Sorry, you must be root to run this.'
         sys.exit(2)
 
-def existsInPath(command):
-    def isExe(fpath):
+
+def _exists_in_path(command):
+    def is_executable(fpath):
         return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
     for path in os.environ["PATH"].split(os.pathsep):
-        exeFile = os.path.join(path, command)
-        if isExe(exeFile):
-            return exeFile
+        exe_file = os.path.join(path, command)
+        if is_executable(exe_file):
+            return exe_file
 
-    return None
 
 def main():
-    (port, host) = parseArguments()
-    verifyPermissions()
+    (port, host, config_dir) = _parse_arguments()
+    _verify_permissions()
 
-    profile      = getProfile(host)
-    port         = struct.pack('!H', int(port))
-    packetData   = profile.encrypt(port)
-    knockPort    = profile.getKnockPort()
+    profile     = _get_profile(host, config_dir)
+    port        = struct.pack('!H', port)
+    packet_data = profile.encrypt(port)
+    knock_port  = profile.knock_port
 
-    (idField, seqField, ackField, winField) = struct.unpack('!HIIH', packetData)
+    (id_field, seq_field, ack_field, win_field) = struct.unpack('!HIIH', packet_data)
 
-    hping = existsInPath("hping3")
+    hping = _exists_in_path("hping3")
 
-    if hping is None:
+    if not hping:
         print "Error, you must install hping3 first."
         sys.exit(2)
 
-    command = [hping, "-S", "-c", "1",
-               "-p", str(knockPort),
-               "-N", str(idField),
-               "-w", str(winField),
-               "-M", str(seqField),
-               "-L", str(ackField),
+    command = [hping, "-q",
+               "-S", "-c", "1",
+               "-p", '%d' % knock_port,
+               "-N", '%d' % id_field,
+               "-w", '%d' % win_field,
+               "-M", '%d' % seq_field,
+               "-L", '%d' % ack_field,
                host]
 
     try:
-        subprocess.call(command, shell=False, stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
+        subprocess.call(command,
+                        shell=False,
+                        stdout=open('/dev/null', 'w'))
         print 'Knock sent.'
 
     except OSError:
         print "Error: Do you have hping3 installed?"
         sys.exit(3)
 
+
 if __name__ == '__main__':
     main()
+

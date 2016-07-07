@@ -20,16 +20,19 @@ import subprocess
 import time
 import threading
 
-class RuleTimer(threading.Thread):
 
-    def __init__(self, openDuration, description):
-        self.openDuration = openDuration
-        self.description  = description
+class RuleTimer(threading.Thread):
+    def __init__(self, open_duration, description):
+        self._open_duration = open_duration
+        self._description   = description
         threading.Thread.__init__(self)
 
+
     def run(self):
-        time.sleep(self.openDuration)
-        command = 'iptables -D ' + self.description
+        time.sleep(self._open_duration)
+        command = 'iptables -D ' + self._description
+        print "Closing port: %s" % command
         command = command.split()
 
         subprocess.call(command, shell=False)
+

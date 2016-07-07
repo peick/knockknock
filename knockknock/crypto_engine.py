@@ -26,60 +26,64 @@ from mac_failed_exception import MacFailedException
 
 
 class CryptoEngine:
+    def __init__(self, profile, cipher_key, mac_key, counter):
+        self._profile    = profile
+        self._counter    = counter
+        self._mac_key    = mac_key
+        self._cipher_key = cipher_key
+        self._cipher     = AES.new(cipher_key, AES.MODE_ECB)
 
-    def __init__(self, profile, cipherKey, macKey, counter):
-        self.profile   = profile
-        self.counter   = counter
-        self.macKey    = macKey
-        self.cipherKey = cipherKey
-        self.cipher    = AES.new(self.cipherKey, AES.MODE_ECB)
 
-    def calculateMac(self, port):
-        hmacSha = hmac.new(self.macKey, port, hashlib.sha1)
-        mac     = hmacSha.digest()
+    def _calculate_mac(self, port):
+        hmac_sha = hmac.new(self._mac_key, port, hashlib.sha1)
+        mac      = hmac_sha.digest()
         return mac[:10]
 
-    def verifyMac(self, port, remoteMac):
-        localMac = self.calculateMac(port)
 
-        if (localMac != remoteMac):
+    def _verify_mac(self, port, remote_mac):
+        local_mac = self._calculate_mac(port)
+
+        if (local_mac != remote_mac):
             raise MacFailedException, "MAC Doesn't Match!"
 
-    def encryptCounter(self, counter):
-        counterBytes = struct.pack('!IIII', 0, 0, 0, counter)
-        return self.cipher.encrypt(counterBytes)
 
-    def encrypt(self, plaintextData):
-        plaintextData += self.calculateMac(plaintextData)
-        counterCrypt   = self.encryptCounter(self.counter)
-        self.counter   = self.counter + 1
-        encrypted      = str()
+    def _encrypt_counter(self, counter):
+        counter_bytes = struct.pack('!IIII', 0, 0, 0, counter)
+        return self._cipher.encrypt(counter_bytes)
 
-        for i in range((len(plaintextData))):
-            encrypted += chr(ord(plaintextData[i]) ^ ord(counterCrypt[i]))
 
-        self.profile.setCounter(self.counter)
-        self.profile.storeCounter()
+    def encrypt(self, plaintext_data):
+        plaintext_data += self._calculate_mac(plaintext_data)
+        counter_crypt   = self._encrypt_counter(self._counter)
+        self._counter  += 1
+        encrypted       = ''
+
+        for i in range((len(plaintext_data))):
+            encrypted += chr(ord(plaintext_data[i]) ^ ord(counter_crypt[i]))
+
+        self._profile.counter = self._counter
+        self._profile.store_counter()
 
         return encrypted
 
-    def decrypt(self, encryptedData, windowSize):
-        for x in range(windowSize):
-            try:
-                counterCrypt = self.encryptCounter(self.counter + x)
-                decrypted    = str()
 
-                for i in range((len(encryptedData))):
-                    decrypted += chr(ord(encryptedData[i]) ^ ord(counterCrypt[i]))
+    def decrypt(self, encrypted_data, window_size):
+        for x in range(window_size):
+            try:
+                counter_crypt = self._encrypt_counter(self._counter + x)
+                decrypted     = ''
+
+                for i in range((len(encrypted_data))):
+                    decrypted += chr(ord(encrypted_data[i]) ^ ord(counter_crypt[i]))
 
                 port = decrypted[:2]
                 mac  = decrypted[2:]
 
-                self.verifyMac(port, mac)
-                self.counter += x + 1
+                self._verify_mac(port, mac)
+                self._counter += x + 1
 
-                self.profile.setCounter(self.counter)
-                self.profile.storeCounter()
+                self._profile.counter = self._counter
+                self._profile.store_counter()
 
                 return int(struct.unpack("!H", port)[0])
 
@@ -87,3 +91,4 @@ class CryptoEngine:
                 pass
 
         raise MacFailedException, "Ciphertext failed to decrypt in range..."
+

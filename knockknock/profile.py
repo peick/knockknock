@@ -25,136 +25,122 @@ from crypto_engine import CryptoEngine
 
 
 class Profile:
+    def __init__(self, directory, cipher_key=None, mac_key=None, counter=None, knock_port=None):
+        self._counter_file = None
+        self._directory    = directory.rstrip('/')
+        self.name          = os.path.basename(self._directory)
 
-    def __init__(self, directory, cipherKey=None, macKey=None, counter=None, knockPort=None):
-        self.counterFile  = None
-        self.directory    = directory
-        self.name         = directory.rstrip('/').split('/')[-1]
-
-        if (cipherKey == None):
-            self.deserialize()
+        if cipher_key is None:
+            self._deserialize()
         else:
-            self.cipherKey = cipherKey
-            self.macKey    = macKey
-            self.counter   = counter
-            self.knockPort = knockPort
+            self._cipher_key = cipher_key
+            self._mac_key    = mac_key
+            self._counter    = counter
+            self.knock_port  = knock_port
 
-        self.cryptoEngine = CryptoEngine(self, self.cipherKey, self.macKey, self.counter)
+        self._crypto_engine = CryptoEngine(self, self._cipher_key, self._mac_key, self._counter)
 
-    def deserialize(self):
-        self.cipherKey    = self.loadCipherKey()
-        self.macKey       = self.loadMacKey()
-        self.counter      = self.loadCounter()
-        self.knockPort    = self.loadConfig()
+        self.ip_addrs       = []
+
+
+    def _deserialize(self):
+        self._cipher_key = self._load_cipher_key()
+        self._mac_key    = self._load_mac_key()
+        self._counter    = self._load_counter()
+        self.knock_port  = self._load_config()
+
 
     def serialize(self):
-        self.storeCipherKey()
-        self.storeMacKey()
-        self.storeCounter()
-        self.storeConfig()
+        self._store_cipher_key()
+        self._store_mac_key()
+        self.store_counter()
+        self._store_config()
 
-    # Getters And Setters
 
-    def getIPAddrs(self):
-        return self.ipAddressList
+    def decrypt(self, ciphertext, window_size):
+        return self._crypto_engine.decrypt(ciphertext, window_size)
 
-    def setIPAddrs(self, ipAddressList):
-        self.ipAddressList = ipAddressList
-
-    def getName(self):
-        return self.name
-
-    def getDirectory(self):
-        return self.directory
-
-    def getKnockPort(self):
-        return self.knockPort
-
-    def setCounter(self, counter):
-        self.counter = counter
-
-    # Encrypt And Decrypt
-
-    def decrypt(self, ciphertext, windowSize):
-        return self.cryptoEngine.decrypt(ciphertext, windowSize)
 
     def encrypt(self, plaintext):
-        return self.cryptoEngine.encrypt(plaintext)
+        return self._crypto_engine.encrypt(plaintext)
 
-    # Serialization Methods
 
-    def loadCipherKey(self):
-        return self.loadKey(self.directory + "/cipher.key")
+    def _load_cipher_key(self):
+        return self._load_key(os.path.join(self._directory, 'cipher.key'))
 
-    def loadMacKey(self):
-        return self.loadKey(self.directory + "/mac.key")
 
-    def loadCounter(self):
+    def _load_mac_key(self):
+        return self._load_key(os.path.join(self._directory, 'mac.key'))
+
+
+    def _load_counter(self):
         # Privsep bullshit...
-        if (self.counterFile == None):
-            self.counterFile = open(self.directory + "/counter", 'r+')
+        if self._counter_file == None:
+            self._counter_file = open(os.path.join(self._directory, 'counter'), 'r+')
 
-        counter = self.counterFile.readline()
+        counter = self._counter_file.readline()
         counter = counter.rstrip("\n")
 
         return int(counter)
 
-    def loadConfig(self):
+
+    def _load_config(self):
         config = ConfigParser.SafeConfigParser()
-        config.read(self.directory + "/config")
+        config.read(os.path.join(self._directory, 'config'))
 
-        return config.get('main', 'knock_port')
+        return int(config.get('main', 'knock_port'))
 
-    def loadKey(self, keyFile):
-        file = open(keyFile, 'r')
+
+    def _load_key(self, key_file):
+        file = open(key_file)
         key  = binascii.a2b_base64(file.readline())
 
         file.close()
         return key
 
-    def storeCipherKey(self):
-        self.storeKey(self.cipherKey, self.directory + "/cipher.key")
 
-    def storeMacKey(self):
-        self.storeKey(self.macKey, self.directory + "/mac.key")
+    def _store_cipher_key(self):
+        self._store_key(self._cipher_key, os.path.join(self._directory, 'cipher.key'))
 
-    def storeCounter(self):
+
+    def _store_mac_key(self):
+        self._store_key(self._mac_key, os.path.join(self._directory, 'mac.key'))
+
+
+    def store_counter(self):
         # Privsep bullshit...
-        if (self.counterFile == None):
-            self.counterFile = open(self.directory + '/counter', 'w')
-            self.setPermissions(self.directory + '/counter')
+        if self._counter_file == None:
+            self._counter_file = open(os.path.join(self._directory, 'counter'), 'w')
+            self._set_permissions(os.path.join(self._directory, 'counter'))
 
-        self.counterFile.seek(0)
-        self.counterFile.write(str(self.counter) + "\n")
-        self.counterFile.flush()
+        self._counter_file.seek(0)
+        self._counter_file.write(str(self._counter) + "\n")
+        self._counter_file.flush()
 
-    def storeConfig(self):
+
+    def _store_config(self):
+        path = os.path.join(self._directory, 'config')
+
         config = ConfigParser.SafeConfigParser()
         config.add_section('main')
-        config.set('main', 'knock_port', str(self.knockPort))
+        config.set('main', 'knock_port', '%d' % self.knock_port)
 
-        configFile = open(self.directory + "/config", 'w')
-        config.write(configFile)
-        configFile.close()
+        config_file = open(path, 'w')
+        config.write(config_file)
+        config_file.close()
 
-        self.setPermissions(self.directory + "/config")
+        self._set_permissions(path)
 
-    def storeKey(self, key, path):
+
+    def _store_key(self, key, path):
         file = open(path, 'w')
         file.write(binascii.b2a_base64(key))
         file.close()
 
-        self.setPermissions(path)
+        self._set_permissions(path)
 
     # Permissions
 
-    def setPermissions(self, path):
+    def _set_permissions(self, path):
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
 
-    # Debug
-
-    def printHex(self, val):
-        for c in val:
-            print "%#x" % ord(c),
-
-        print ""

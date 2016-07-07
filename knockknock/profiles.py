@@ -21,44 +21,45 @@ import socket
 
 from profile import Profile
 
-class Profiles:
 
+class Profiles:
     def __init__(self, directory):
-        self.profiles = list()
+        self._profiles = []
 
         for item in os.listdir(directory):
-            if os.path.isdir(os.path.join(directory, item)):
-                self.profiles.append(Profile(os.path.join(directory, item)))
+            path = os.path.join(directory, item)
+            if os.path.isdir(path) and os.listdir(path):
+                self._profiles.append(Profile(path))
 
-    def getProfileForPort(self, port):
-        for profile in self.profiles:
-            if (int(profile.getKnockPort()) == int(port)):
+
+    def get_profile_for_port(self, port):
+        assert type(port) == int
+        for profile in self._profiles:
+            if profile.knock_port == port:
                 return profile
 
-        return None
 
-    def getProfileForName(self, name):
-        for profile in self.profiles:
-            if (name == profile.getName()):
+    def get_profile_for_name(self, name):
+        for profile in self._profiles:
+            if profile.name == name:
                 return profile
 
-        return None
 
-    def getProfileForIP(self, ip):
-        for profile in self.profiles:
-            ips = profile.getIPAddrs()
+    def get_profile_for_ip(self, ip):
+        for profile in self._profiles:
+            ips = profile.ip_addrs
 
             if ip in ips:
                 return profile
 
-        return None
 
-    def resolveNames(self):
-        for profile in self.profiles:
-            name                     = profile.getName()
-            address, alias, addrlist = socket.gethostbyname_ex(name)
+    def resolve_names(self):
+        for profile in self._profiles:
+            address, alias, addrlist = socket.gethostbyname_ex(profile.name)
 
-            profile.setIPAddrs(addrlist)
+            profile.ip_addrs = addrlist
 
-    def isEmpty(self):
-        return len(self.profiles) == 0
+
+    def is_empty(self):
+        return len(self._profiles) == 0
+

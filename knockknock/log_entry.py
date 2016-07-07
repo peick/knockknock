@@ -20,25 +20,43 @@ import struct
 
 
 class LogEntry:
-
     def __init__(self, line):
-        self.buildTokenMap(line)
+        self._build_token_map(line)
 
 
-    def buildTokenMap(self, line):
-        self.tokenMap = dict()
+    def _build_token_map(self, line):
+        self._token_map = dict()
 
         for token in line.split():
             index = token.find("=");
             if index != -1:
                 exploded = token.split('=')
-                self.tokenMap[exploded[0]] = exploded[1]
+                self._token_map[exploded[0]] = exploded[1]
 
-    def getDestinationPort(self):
-        return int(self.tokenMap['DPT'])
 
-    def getEncryptedData(self):
-        return struct.pack('!HIIH', int(self.tokenMap['ID']), int(self.tokenMap['SEQ']), int(self.tokenMap['ACK']), int(self.tokenMap['WINDOW']))
+    def is_valid_tcp_packet(self):
+        return (self._token_map.get('DPT')
+                and self._token_map.get('SPT')
+                and self._token_map.get('SEQ'))
 
-    def getSourceIP(self):
-        return self.tokenMap['SRC']
+
+    def get_destination_port(self):
+        return int(self._token_map['DPT'])
+
+
+    def get_encrypted_data(self):
+        return struct.pack('!HIIH',
+                           int(self._token_map['ID']),
+                           int(self._token_map['SEQ']),
+                           int(self._token_map['ACK']),
+                           int(self._token_map['WINDOW']))
+
+
+    def get_source_ip(self):
+        return self._token_map['SRC']
+
+
+    def __repr__(self):
+        mapping = sorted(self._token_map.items())
+        value = ['%s=%s' % (k, v) for k, v in mapping]
+        return '<LogEntry %s>' % ' '.join(value)

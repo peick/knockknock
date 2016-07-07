@@ -20,10 +20,10 @@ import ConfigParser
 
 class DaemonConfiguration:
 
-    def __init__(self, file):
+    def __init__(self, path):
         try:
             parser = ConfigParser.SafeConfigParser({'delay': '15', 'error_window': '20'})
-            parser.read(file)
+            parser.read(path)
 
             self.delay  = int(parser.get('main', 'delay'))
             self.window = int(parser.get('main', 'error_window'))
@@ -32,8 +32,3 @@ class DaemonConfiguration:
             self.delay  = 15
             self.window = 20
 
-    def getDelay(self):
-        return self.delay
-
-    def getWindow(self):
-        return self.window

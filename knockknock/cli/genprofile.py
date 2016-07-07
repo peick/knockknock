@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 __author__ = "Moxie Marlinspike"
 __email__  = "moxie@thoughtcrime.org"
 __license__= """
@@ -29,60 +28,70 @@ import sys
 from knockknock.profiles import Profiles
 from knockknock.profile  import Profile
 
-DAEMON_DIR   = '/etc/knockknock.d/'
-PROFILES_DIR = DAEMON_DIR + 'profiles/'
 
-def parseArguments():
+DAEMON_DIR   = '/etc/knockknock.d'
+PROFILES_DIR = os.path.join(DAEMON_DIR, 'profiles')
+
+
+def _parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('port', metavar='KNOCK_PORT', type=int)
     parser.add_argument('profile', metavar='PROFILE_NAME')
+    parser.add_argument('-c', '--config-dir',
+                        dest='config_dir',
+                        default='/etc/knocknock.d',
+                        help='Defaults to /etc/knockknock.d')
 
     args = parser.parse_args()
+    args.config_dir = os.path.expanduser(args.config_dir)
 
-    return (args.port, args.profile)
+    return (args.port, args.profile, args.config_dir)
 
-def checkProfile(profileName):
-    if (os.path.isdir(PROFILES_DIR + profileName)):
-        print "Profile already exists.  First rm " + PROFILES_DIR + profileName + "/"
-        sys.exit(0)
 
-def checkPortConflict(knockPort):
-    if (not os.path.isdir(PROFILES_DIR)):
+def _check_profile(profile_dir):
+    if os.path.isdir(profile_dir) and os.listdir(profile_dir):
+        print "Profile already exists: %s" % (profile_dir, )
+        sys.exit(1)
+
+
+def _check_port_conflict(profiles_dir, knock_port):
+    if not os.path.isdir(profiles_dir):
         return
 
-    profiles        = Profiles(PROFILES_DIR)
-    matchingProfile = profiles.getProfileForPort(knockPort)
+    profiles         = Profiles(profiles_dir)
+    matching_profile = profiles.get_profile_for_port(knock_port)
 
-    if (matchingProfile != None):
-        print "A profile already exists for knock port: " + str(knockPort) + " at this location: " + matchingProfile.getDirectory()
+    if matching_profile:
+        print "A profile already exists for knock port %d at %s" % (knock_port, matching_profile.directory)
+        sys.exit(1)
 
-def createDirectory(profileName):
-    if not os.path.isdir(DAEMON_DIR):
-        os.mkdir(DAEMON_DIR)
 
-    if not os.path.isdir(PROFILES_DIR):
-        os.mkdir(PROFILES_DIR)
+def _create_directory(profile_dir):
+    if not os.path.isdir(profile_dir):
+        os.makedirs(profile_dir)
 
-    if not os.path.isdir(PROFILES_DIR + profileName):
-        os.mkdir(PROFILES_DIR + profileName)
 
 def main():
-    (profileName, knockPort) = parseArguments()
+    (knock_port, profile_name, config_dir) = _parse_arguments()
 
-    checkProfile(profileName)
-    checkPortConflict(knockPort)
-    createDirectory(profileName)
+    profiles_dir = os.path.join(config_dir, 'profiles')
+    profile_dir  = os.path.join(profiles_dir, profile_name)
 
-    random    = open('/dev/urandom', 'rb')
-    cipherKey = random.read(16)
-    macKey    = random.read(16)
-    counter   = 0
+    _check_profile(profile_dir)
+    _check_port_conflict(profiles_dir, knock_port)
+    _create_directory(profile_dir)
 
-    profile = Profile(PROFILES_DIR + profileName, cipherKey, macKey, counter, knockPort)
+    random     = open('/dev/urandom', 'rb')
+    cipher_key = random.read(16)
+    mac_key    = random.read(16)
+    counter    = 0
+
+    profile = Profile(profile_dir, cipher_key, mac_key, counter, knock_port)
     profile.serialize()
     random.close()
 
-    print "Keys successfully generated in " + PROFILES_DIR + profileName
+    print "Keys successfully generated in %s" % (profile_dir, )
+
 
 if __name__ == '__main__':
     main()
