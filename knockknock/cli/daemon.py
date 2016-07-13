@@ -1,28 +1,4 @@
 #!/usr/bin/env python
-"""knockknock-daemon implements Moxie Marlinspike's port knocking protocol."""
-
-__author__ = "Moxie Marlinspike"
-__email__  = "moxie@thoughtcrime.org"
-__license__= """
-Copyright (c) 2009 Moxie Marlinspike <moxie@thoughtcrime.org>
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-USA
-
-"""
-
 import argparse
 import os
 import sys
@@ -30,18 +6,20 @@ import pwd
 import grp
 
 import knockknock.daemonize
-from knockknock.log_file import LogFile
-from knockknock.profiles import Profiles
-from knockknock.port_opener import PortOpener
-from knockknock.daemon_configuration import DaemonConfiguration
 from knockknock.knock_watcher import KnockWatcher
+from knockknock.log_file import LogFile
+from knockknock.port_opener import PortOpener
+from knockknock.profiles import Profiles
+
+
+DAEMON_DIR = '/etc/knockknock'
 
 
 def _parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config-dir',
                         dest='config_dir',
-                        default='/etc/knocknock.d')
+                        default=DAEMON_DIR)
     parser.add_argument('-f', '--foreground',
                         action='store_true',
                         help='Run in foreground.')
@@ -58,15 +36,8 @@ def _check_privileges():
 
 
 def _check_configuration(config_dir):
-    profiles_dir = os.path.join(config_dir, 'profiles')
-
     if not os.path.isdir(config_dir):
-        print "%s does not exist.  You need to setup your profiles first.." % (config_dir, )
-        sys.exit(3)
-
-    if not os.path.isdir(profiles_dir):
-        print "%s does not exist.  You need to setup your profiles first..." % (profiles_dir, )
-        sys.exit(3)
+        print "%s directory does not exist. You need to setup your profiles first." % (config_dir, )
 
 
 def _drop_privileges():
@@ -78,17 +49,17 @@ def _drop_privileges():
     os.setuid(nobody.pw_uid)
 
 
-def _handle_firewall(input, config):
-    port_opener = PortOpener(input, config.delay)
+def _handle_firewall(input):
+    port_opener = PortOpener(input)
     port_opener.wait_for_requests()
 
 
-def _handle_knocks(output, profiles, config):
+def _handle_knocks(output, profiles):
     _drop_privileges()
 
     log_file      = LogFile('/var/log/kern.log')
-    port_opener   = PortOpener(output, config.delay)
-    knock_watcher = KnockWatcher(config, log_file, profiles, port_opener)
+    port_opener   = PortOpener(output)
+    knock_watcher = KnockWatcher(log_file, profiles, port_opener)
 
     knock_watcher.tail_and_process()
 
@@ -99,8 +70,7 @@ def main():
     _check_privileges()
     _check_configuration(config_dir)
 
-    profiles = Profiles(os.path.join(config_dir, 'profiles'))
-    config   = DaemonConfiguration(os.path.join(config_dir, 'config'))
+    profiles = Profiles(config_dir)
 
     if profiles.is_empty():
         print 'WARNING: Running knockknock-daemon without any active profiles.'
@@ -113,10 +83,10 @@ def main():
 
     if pid:
         os.close(input)
-        _handle_knocks(os.fdopen(output, 'w'), profiles, config)
+        _handle_knocks(os.fdopen(output, 'w'), profiles)
     else:
         os.close(output)
-        _handle_firewall(os.fdopen(input, 'r'), config)
+        _handle_firewall(os.fdopen(input, 'r'))
 
 
 if __name__ == '__main__':

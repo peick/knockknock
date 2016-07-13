@@ -4,6 +4,8 @@
 .*.swo
 MANIFEST
 
+.tox/
+.cache/
 build/
 dist/
 knockknock.egg-info/

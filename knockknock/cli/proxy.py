@@ -82,6 +82,7 @@ def _check_profiles(config_dir):
 
 
 def main():
+    raise Exception('got broken by refactoring')
     port, config_dir = _parse_arguments()
     _check_privileges()
     _check_profiles(config_dir)

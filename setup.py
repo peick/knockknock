@@ -16,9 +16,10 @@ setup(name         = 'knockknock',
       author_email = 'moxie@thoughtcrime.org',
       url          = 'http://www.thoughtcrime.org/software/knockknock/',
       license      = 'GPL',
-      packages     = ["knockknock", "knockknock.proxy", "knockknock.cli"],
+      packages     = ["knockknock", "knockknock.methods", "knockknock.proxy", "knockknock.cli"],
       install_requires = [
-          'pycrypto'
+          'pycrypto',
+          'six',
       ] + install_requires,
       #data_files   = [("", ["minimal-firewall.sh"]),
       #                ('share/knockknock', ['README', 'INSTALL', 'COPYING']),

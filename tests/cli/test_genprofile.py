@@ -1,16 +1,28 @@
+import ConfigParser
+
 import flexmock
+
 from knockknock.cli import genprofile
 
 
 def test_client(tmpdir):
     c = flexmock(genprofile)
     c.should_receive('_parse_arguments') \
-        .and_return((999, 'localhost', tmpdir.strpath))
+        .and_return(('counter', 'localhost', 999, tmpdir.strpath))
 
     c.main()
 
-    destdir = tmpdir.join('profiles').join('localhost')
-    assert destdir.join('cipher.key').read()
-    assert destdir.join('mac.key').read()
-    assert destdir.join('counter').read().strip() == '0'
-    assert destdir.join('config').read().replace(' ', '').strip() == '[main]\nknock_port=999'
+    dest = tmpdir.join('localhost-999.conf')
+    assert dest.exists()
+
+    parser = ConfigParser.SafeConfigParser()
+    parser.readfp(open(dest.strpath))
+
+    assert parser.get('knockknock', 'host') == 'localhost'
+    assert parser.get('knockknock', 'port') == '999'
+    assert parser.get('knockknock', 'method') == 'counter'
+    assert parser.get('counter', 'cipher_key')
+    assert parser.get('counter', 'mac_key')
+    assert parser.get('counter', 'counter') == '0'
+    assert parser.get('counter', 'window') == '16'
+

@@ -24,7 +24,7 @@ from rule_timer import RuleTimer
 
 
 class PortOpener:
-    IPTABLES_RULE = ('INPUT -m limit'
+    IPTABLES_RULE = ('%s -m limit'
                      ' --limit 1/minute'
                      ' --limit-burst 1'
                      ' -m state'
@@ -35,35 +35,39 @@ class PortOpener:
                      ' -j ACCEPT')
 
 
-    def __init__(self, stream, open_duration):
-        self._stream        = stream
-        self._open_duration = open_duration
+    def __init__(self, stream):
+        self._stream = stream
 
 
     def wait_for_requests(self):
         while True:
-            source_ip = self._stream.readline().rstrip("\n")
-            port      = self._stream.readline().rstrip("\n")
+            source_ip     = self._stream.readline().rstrip("\n")
+            port          = self._stream.readline().rstrip("\n")
+            open_duration = self._stream.readline().rstrip("\n")
+            table         = self._stream.readline().rstrip("\n")
 
-            if not source_ip or not port:
-                syslog.syslog("knockknock.PortOpener: Parent process is closed.  Terminating.")
+            if not source_ip or not port or not open_duration or not table:
+                syslog.syslog("knockknock.PortOpener: Parent process is closed. Terminating.")
                 os._exit(4)
 
-            port        = int(port)
-            description = self.IPTABLES_RULE % (source_ip, port)
-            command     = 'iptables -I ' + description
-            command     = command.split()
+            port          = int(port)
+            open_duration = int(open_duration)
+            description   = self.IPTABLES_RULE % (table, source_ip, port)
+            command       = 'iptables -I ' + description
+            command       = command.split()
 
             print "Opening port %d for %s" % (port, source_ip)
             subprocess.call(command, shell=False)
 
-            RuleTimer(self._open_duration, description).start()
+            RuleTimer(open_duration, description).start()
 
 
-    def open(self, source_ip, port):
+    def open(self, source_ip, port, open_duration, table):
         try:
-            self._stream.write(source_ip + "\n")
-            self._stream.write(str(port) + "\n")
+            self._stream.write("%s\n" % source_ip)
+            self._stream.write("%d\n" % port)
+            self._stream.write("%d\n" % open_duration)
+            self._stream.write("%s\n" % table)
             self._stream.flush()
         except:
             syslog.syslog("knockknock:  Error, PortOpener process has died.  Terminating.")

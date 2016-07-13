@@ -17,9 +17,11 @@
 #
 
 import os
+import re
 import socket
 
-from profile import Profile
+from knockknock.profile_config import ProfileConfig
+from knockknock.methods import profile_by_name
 
 
 class Profiles:
@@ -28,8 +30,22 @@ class Profiles:
 
         for item in os.listdir(directory):
             path = os.path.join(directory, item)
-            if os.path.isdir(path) and os.listdir(path):
-                self._profiles.append(Profile(path))
+            if not os.path.isdir(path) and re.search(r'\.(conf|ini)', item):
+                profile = get_profile(path)
+                self._profiles.append(profile)
+
+
+    def filter(self, log_entry):
+        for profile in self._profiles:
+            if profile.match(log_entry):
+                yield profile
+
+
+    def profile_for_hostport(self, host, port):
+        assert type(port) == int
+        for profile in self._profiles:
+            if profile.match_hostport(host, port):
+                return profile
 
 
     def get_profile_for_port(self, port):
@@ -62,4 +78,9 @@ class Profiles:
 
     def is_empty(self):
         return len(self._profiles) == 0
+
+
+def get_profile(config_file):
+    config = ProfileConfig(config_file)
+    return profile_by_name(config.method, config)
 

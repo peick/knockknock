@@ -19,12 +19,10 @@
 import syslog
 
 from log_entry import LogEntry
-from mac_failed_exception import MacFailedException
 
 
 class KnockWatcher:
-    def __init__(self, config, log_file, profiles, port_opener):
-        self._config      = config
+    def __init__(self, log_file, profiles, port_opener):
         self._log_file    = log_file
         self._profiles    = profiles
         self._port_opener = port_opener
@@ -35,24 +33,17 @@ class KnockWatcher:
             try:
                 log_entry = LogEntry(line)
 
-                if not log_entry.is_valid_tcp_packet():
-                    continue
-
-                port      = log_entry.get_destination_port()
-                profile   = self._profiles.get_profile_for_port(port)
-
-                if profile:
+                for profile in self._profiles.filter(log_entry):
                     print "got knock attempt: %r" % log_entry
-                    try:
-                        ciphertext = log_entry.get_encrypted_data()
-                        window     = self._config.window
-                        port       = profile.decrypt(ciphertext, window)
-                        source_ip  = log_entry.get_source_ip()
+                    iptables_table, open_duration, port = profile.verify(log_entry)
 
-                        self._port_opener.open(source_ip, port)
-                        syslog.syslog("Received authenticated port-knock for port " + str(port) + " from " + source_ip)
-                    except MacFailedException:
-                        pass
+                    if not port:
+                        continue
+
+                    source_ip = log_entry.get_source_ip()
+
+                    self._port_opener.open(source_ip, port, open_duration, iptables_table)
+                    syslog.syslog("Received authenticated port-knock for port " + str(port) + " from " + source_ip)
             except:
                 syslog.syslog("knocknock skipping unrecognized line: %s" % line[:120])
 

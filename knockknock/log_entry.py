@@ -19,37 +19,46 @@
 import struct
 
 
+_INTEGER_KEYS = set(['DPT', 'ID', 'SEQ', 'ACK', 'WINDOW'])
+
+
 class LogEntry:
     def __init__(self, line):
-        self._build_token_map(line)
-
-
-    def _build_token_map(self, line):
-        self._token_map = dict()
+        self._token_map = {}
 
         for token in line.split():
             index = token.find("=");
             if index != -1:
-                exploded = token.split('=')
-                self._token_map[exploded[0]] = exploded[1]
+                exploded = token.split('=', 1)
+                key, value = exploded
+                self._token_map[key] = value
 
+                if key in _INTEGER_KEYS:
+                    try:
+                        setattr(self, key, int(value))
+                    except ValueError:
+                        pass
+                elif key.isupper():
+                    setattr(self, key, value)
 
-    def is_valid_tcp_packet(self):
-        return (self._token_map.get('DPT')
-                and self._token_map.get('SPT')
-                and self._token_map.get('SEQ'))
+        try:
+            self.tcp_packet = self.PROTO == 'TCP'
+        except AttributeError:
+            self.tcp_packet = False
+
+        try:
+            self.extended_tcp_packet = self.tcp_packet and \
+                self.DPT != None and \
+                self.ID != None and \
+                self.SEQ != None and \
+                self.ACK != None and \
+                self.WINDOW != None
+        except AttributeError:
+            self.extended_tcp_packet = False
 
 
     def get_destination_port(self):
         return int(self._token_map['DPT'])
-
-
-    def get_encrypted_data(self):
-        return struct.pack('!HIIH',
-                           int(self._token_map['ID']),
-                           int(self._token_map['SEQ']),
-                           int(self._token_map['ACK']),
-                           int(self._token_map['WINDOW']))
 
 
     def get_source_ip(self):
@@ -60,3 +69,4 @@ class LogEntry:
         mapping = sorted(self._token_map.items())
         value = ['%s=%s' % (k, v) for k, v in mapping]
         return '<LogEntry %s>' % ' '.join(value)
+
