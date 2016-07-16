@@ -1,0 +1,29 @@
+Source: knockknock
+Section: unknown
+Priority: optional
+Maintainer: Michael Peick <michael.peick+knockknock@gmail.com>
+Build-Depends: debhelper (>=9),dh-python,dh-systemd (>= 1.5),python-all (>= 2.6.6-3~),python-setuptools
+#,python3-all,python3-setuptools
+Standards-Version: 3.9.6
+Homepage: https://github.com/peick/knockknock
+X-Python-Version: >= 2.6
+#X-Python3-Version: >= 3.2
+#Vcs-Git: https://github.com/peick/knockknock.git
+#Vcs-Browser: https://github.com/peick/knockknock.git
+
+Package: knockknock
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, iptables, sudo
+Suggests: ufw
+Description: Port knocking daemon and client (Python 2)
+ .
+ This package installs knockknock for Python 2.
+
+#Package: knockknock3
+#Architecture: all
+#Depends: ${python3:Depends}, ${misc:Depends}, iptables, sudo
+#Suggests: ufw
+#Description: Port knocking daemon and client (Python 3)
+# .
+# This package installs knockknock for Python 3.
+#

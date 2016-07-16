@@ -1,0 +1,16 @@
+[Unit]
+Description=Port knocking service
+After=network.target auditd.service
+# ConditionPathExists=!/etc/ssh/sshd_not_to_be_run
+
+[Service]
+EnvironmentFile=-/etc/default/knockknock
+ExecStart=/usr/bin/knockknock-daemon -f $KNOCKKNOCK_OPTS
+# ExecReload=/bin/kill -HUP $MAINPID
+# KillMode=process
+Restart=on-failure
+# Type=notify
+User=knockknock
+
+[Install]
+WantedBy=multi-user.target
