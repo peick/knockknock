@@ -5,7 +5,7 @@ cd `readlink -f $0`/../../..
 rsync -av --exclude knockknock/.tox --exclude "*.pyc" knockknock /tmp
 
 cd /tmp/knockknock
-rm /tmp/knockknock*.deb
+rm -f /tmp/knockknock*.deb
 dpkg-buildpackage -uc -us
 
 sudo dpkg -i /tmp/knockknock*.deb

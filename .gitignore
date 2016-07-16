@@ -9,3 +9,10 @@ MANIFEST
 build/
 dist/
 knockknock.egg-info/
+
+debian/debhelper-build-stamp
+debian/python-knockknock.debhelper.log
+debian/python-knockknock*.debhelper
+debian/python-knockknock.substvars
+debian/files
+debian/python-knockknock/

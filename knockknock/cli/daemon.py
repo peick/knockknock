@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 import argparse
+import errno
 import os
 import sys
-import pwd
-import grp
 
 import knockknock.daemonize
 from knockknock.knock_watcher import KnockWatcher
@@ -19,7 +18,9 @@ def _parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config-dir',
                         dest='config_dir',
-                        default=DAEMON_DIR)
+                        default=DAEMON_DIR,
+                        help='Configuration directory containing profiles. ' +
+                             'Defaults to %s' % DAEMON_DIR)
     parser.add_argument('-f', '--foreground',
                         action='store_true',
                         help='Run in foreground.')
@@ -30,9 +31,15 @@ def _parse_arguments():
 
 
 def _check_privileges():
-    if not os.geteuid() == 0:
-        print "Sorry, you have to run knockknock-daemon as root."
-        sys.exit(3)
+    if os.geteuid() == 0:
+        print "You are running knockknock-daemon as root which is not recommend."
+    else:
+        try:
+            open('/var/log/kern.log')
+        except IOError as error:
+            if error.errno == errno.EACCES:
+                print "User %s does not have permissions to read /var/log/kern.log"
+                sys.exit(3)
 
 
 def _check_configuration(config_dir):
@@ -40,25 +47,14 @@ def _check_configuration(config_dir):
         print "%s directory does not exist. You need to setup your profiles first." % (config_dir, )
 
 
-def _drop_privileges():
-    nobody = pwd.getpwnam('nobody')
-    adm    = grp.getgrnam('adm')
-
-    os.setgroups([adm.gr_gid])
-    os.setgid(adm.gr_gid)
-    os.setuid(nobody.pw_uid)
-
-
 def _handle_firewall(input):
     port_opener = PortOpener(input)
     port_opener.wait_for_requests()
 
 
-def _handle_knocks(output, profiles):
-    _drop_privileges()
-
+def _handle_knocks(profiles):
     log_file      = LogFile('/var/log/kern.log')
-    port_opener   = PortOpener(output)
+    port_opener   = PortOpener()
     knock_watcher = KnockWatcher(log_file, profiles, port_opener)
 
     knock_watcher.tail_and_process()
@@ -78,15 +74,7 @@ def main():
     if not foreground:
         knockknock.daemonize.createDaemon()
 
-    input, output = os.pipe()
-    pid           = os.fork()
-
-    if pid:
-        os.close(input)
-        _handle_knocks(os.fdopen(output, 'w'), profiles)
-    else:
-        os.close(output)
-        _handle_firewall(os.fdopen(input, 'r'))
+    _handle_knocks(profiles)
 
 
 if __name__ == '__main__':
