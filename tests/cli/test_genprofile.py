@@ -6,9 +6,14 @@ from knockknock.cli import genprofile
 
 
 def test_client(tmpdir):
+    args = flexmock(method='counter',
+                    host='localhost',
+                    port=999,
+                    config_dir=tmpdir.strpath,
+                    verbose=True)
+
     c = flexmock(genprofile)
-    c.should_receive('_parse_arguments') \
-        .and_return(('counter', 'localhost', 999, tmpdir.strpath))
+    c.should_receive('_parse_arguments').and_return(args)
 
     c.main()
 

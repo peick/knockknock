@@ -9,40 +9,59 @@ from knockknock.methods.base import Profile
 from knockknock.profile_config import int_
 
 
-class CounterConfig:
-    def __init__(self, cipher_key, mac_key, counter, window):
+class BaseCounterConfig:
+    def __init__(self, cipher_key, mac_key, window):
         if not cipher_key:
             raise ValueError('invalid cipher_key')
         if not mac_key:
             raise ValueError('invalid mac_key')
-        if counter is None:
-            raise ValueError('invalid counter')
         if not window:
             raise ValueError('invalid window')
 
         self.cipher_key = cipher_key
         self.mac_key    = mac_key
-        self.counter    = int_(counter, min_value=0)
         self.window     = int_(window,  min_value=1)
 
 
     @staticmethod
-    def from_config_parser(parser):
+    def from_config_parser(parser, section):
         deserialize = lambda b: b.decode('base64')
-        cipher_key  = deserialize(parser.get('counter', 'cipher_key'))
-        mac_key     = deserialize(parser.get('counter', 'mac_key'))
-        counter     = parser.get('counter', 'counter')
-        window      = parser.get('counter', 'window')
+        cipher_key  = deserialize(parser.get(section, 'cipher_key'))
+        mac_key     = deserialize(parser.get(section, 'mac_key'))
+        window      = parser.get(section, 'window')
+
+        return cipher_key, mac_key, window
+
+
+    def store_config(self, parser, section):
+        parser.add_section(section)
+        serialize = lambda b: b.encode('base64').replace('\n', '')
+        parser.set(section, 'cipher_key', serialize(self.cipher_key))
+        parser.set(section, 'mac_key',    serialize(self.mac_key))
+        parser.set(section, 'window',     '%d' % self.window)
+
+
+class CounterConfig(BaseCounterConfig):
+    def __init__(self, cipher_key, mac_key, counter, window):
+        BaseCounterConfig.__init__(self, cipher_key, mac_key, window)
+        if counter is None:
+            raise ValueError('invalid counter')
+
+        self.counter    = int_(counter, min_value=0)
+
+
+    @staticmethod
+    def from_config_parser(parser):
+        cipher_key, mac_key, window = \
+            BaseCounterConfig.from_config_parser(parser, 'counter')
+
+        counter = parser.get('counter', 'counter')
         return CounterConfig(cipher_key, mac_key, counter, window)
 
 
     def store_config(self, parser):
-        parser.add_section('counter')
-        serialize = lambda b: b.encode('base64').replace('\n', '')
-        parser.set('counter', 'cipher_key', serialize(self.cipher_key))
-        parser.set('counter', 'mac_key',    serialize(self.mac_key))
-        parser.set('counter', 'window',     '%d' % self.window)
-        parser.set('counter', 'counter',    '%d' % self.counter)
+        BaseCounterConfig.store_config(self, parser, 'counter')
+        parser.set('counter', 'counter', '%d' % self.counter)
 
 
 class CryptoEngine:
@@ -103,9 +122,17 @@ class CryptoEngine:
         raise MacFailedException, "Ciphertext failed to decrypt in range..."
 
 
-class CounterProfile(Profile):
+class BaseCounterProfile(Profile):
     def __init__(self, config):
         Profile.__init__(self, config)
+
+
+    def _update_config(self, new_counter):
+        raise NotImplementedError()
+
+
+    def _current_counter(self):
+        raise NotImplementedError()
 
 
     def match(self, log_entry):
@@ -125,12 +152,11 @@ class CounterProfile(Profile):
                                log_entry.WINDOW)
 
         try:
-            new_counter, port = crypto_engine.decrypt(settings.counter,
+            new_counter, port = crypto_engine.decrypt(self._current_counter(),
                                                       ciphered,
                                                       settings.window)
 
-            self._config.method_config.counter = new_counter
-            self._config.store_config()
+            self._update_config(new_counter)
 
             return self._config.iptables_table, self._config.open_duration, port
         except MacFailedException:
@@ -145,12 +171,21 @@ class CounterProfile(Profile):
 
         plaintext = struct.pack('!H', self._config.port)
 
-        new_counter, ciphered = crypto_engine.encrypt(settings.counter,
+        new_counter, ciphered = crypto_engine.encrypt(self._current_counter(),
                                                       plaintext)
 
-        self._config.method_config.counter = new_counter
-        self._config.store_config()
+        self._update_config(new_counter)
 
         ID, SEQ, ACK, WIN = struct.unpack('!HIIH', ciphered)
         return [(self._config.port, ID, SEQ, ACK, WIN)]
+
+
+class CounterProfile(BaseCounterProfile):
+    def _update_config(self, new_counter):
+        self._config.method_config.counter = new_counter
+        self._config.store_config()
+
+
+    def _current_counter(self):
+        return self._config.method_config.counter
 

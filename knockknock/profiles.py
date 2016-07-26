@@ -16,12 +16,16 @@
 # USA
 #
 
+import logging
 import os
 import re
 import socket
 
 from knockknock.profile_config import ProfileConfig
 from knockknock.methods import profile_by_name
+
+
+_log = logging.getLogger(__name__)
 
 
 class Profiles:
@@ -31,6 +35,7 @@ class Profiles:
         for item in os.listdir(directory):
             path = os.path.join(directory, item)
             if not os.path.isdir(path) and re.search(r'\.(conf|ini)', item):
+                _log.debug('loading profile at %s', path)
                 profile = get_profile(path)
                 self._profiles.append(profile)
 

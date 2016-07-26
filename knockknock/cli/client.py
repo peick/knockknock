@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import argparse
 import os
-import struct
 import subprocess
 import sys
 
 from knockknock.profiles import Profiles
+from knockknock.cli.log_setup import setup_logging
 
 
 def _parse_arguments():
@@ -14,13 +14,14 @@ def _parse_arguments():
                         dest='config_dir',
                         default='~/.knockknock',
                         help='Defaults to ~/.knockknock')
+    parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-p', '--port', type=int)
     parser.add_argument('host', help='Address of the knockknock server')
 
     args = parser.parse_args()
     args.config_dir = os.path.expanduser(args.config_dir)
 
-    return (args.port, args.host, args.config_dir)
+    return args
 
 
 def _get_profile(host, port, config_dir):
@@ -66,7 +67,8 @@ def _send_packet(hping, host, port, ID, SEQ, ACK, WIN):
 
 
 def main():
-    port, host, config_dir = _parse_arguments()
+    args = _parse_arguments()
+    setup_logging(args.verbose)
     _verify_permissions()
 
     hping = _exists_in_path("hping3")
@@ -74,11 +76,11 @@ def main():
         print "Error, you must install hping3 first."
         sys.exit(2)
 
-    profile = _get_profile(host, port, config_dir)
+    profile = _get_profile(args.host, args.port, args.config_dir)
     packets = profile.generate()
 
     for port, ID, SEQ, ACK, WIN in packets:
-        _send_packet(hping, host, port, ID, SEQ, ACK, WIN)
+        _send_packet(hping, args.host, args.port, ID, SEQ, ACK, WIN)
 
 
 if __name__ == '__main__':

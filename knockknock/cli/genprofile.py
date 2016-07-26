@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 
+from knockknock.cli.log_setup import setup_logging
 from knockknock.methods import METHODS, COUNTER
 from knockknock.methods.counter import CounterConfig
 from knockknock.profile_config import ProfileConfig
@@ -21,12 +22,13 @@ def _parse_arguments():
                         default='/etc/knocknock.d')
     parser.add_argument('-m', metavar='METHOD',
                         dest='method')
+    parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
     assert args.method in METHODS
     args.config_dir = os.path.expanduser(args.config_dir)
 
-    return (args.method, args.host, args.port, args.config_dir)
+    return args
 
 
 def _check_profile(profile_path):
@@ -71,15 +73,16 @@ def _generate_profile(method, host, port, profile_path):
 
 
 def main():
-    (method, host, port, config_dir) = _parse_arguments()
+    args = _parse_arguments()
+    setup_logging(args.verbose)
 
-    profile_path = os.path.join(config_dir, '%s-%s.conf' % (host, port))
+    profile_path = os.path.join(args.config_dir, '%s-%s.conf' % (args.host, args.port))
 
     _check_profile(profile_path)
-    _check_port_confflict(config_dir, host, port)
-    _create_directory(config_dir)
+    _check_port_confflict(args.config_dir, args.host, args.port)
+    _create_directory(args.config_dir)
 
-    _generate_profile(method, host, port, profile_path)
+    _generate_profile(args.method, args.host, args.port, profile_path)
 
 
 if __name__ == '__main__':

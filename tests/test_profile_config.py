@@ -37,7 +37,7 @@ def test_store_new_config(tmpdir):
 
 
 def test_load_config(config_dir):
-    path = config_dir.join('example.com-22.conf')
+    path = config_dir.join('example.com-22-counter.conf')
     config = ProfileConfig(path.strpath)
 
     assert config.port == 22

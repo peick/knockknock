@@ -18,7 +18,7 @@ _ENC_WIN = 0xbbd3
 
 @pytest.fixture
 def profile(config_dir, tmpdir):
-    path = config_dir.join('example.com-22.conf')
+    path = config_dir.join('example.com-22-counter.conf')
     dest = tmpdir.join(path.basename)
     path.copy(dest)
 

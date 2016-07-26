@@ -1,26 +1,4 @@
 #!/usr/bin/env python
-__author__ = "Moxie Marlinspike"
-__email__  = "moxie@thoughtcrime.org"
-__license__= """
-Copyright (c) 2009 Moxie Marlinspike <moxie@thoughtcrime.org>
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-USA
-
-"""
-
 import argparse
 import asyncore
 import os
@@ -28,6 +6,7 @@ import socket
 import sys
 
 import knockknock.daemonize
+from knockknock.cli.log_setup import setup_logging
 from knockknock.profiles import Profiles
 from knockknock.proxy.socks_request_handler import SocksRequestHandler
 
@@ -53,6 +32,7 @@ def _parse_arguments():
                         dest='config_dir',
                         default='~/.knockknock')
     parser.add_argument('port', metavar='LISTEN_PORT', type=int)
+    parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
     args.config_dir = os.path.expanduser(args.config_dir)
@@ -83,12 +63,14 @@ def _check_profiles(config_dir):
 
 def main():
     raise Exception('got broken by refactoring')
-    port, config_dir = _parse_arguments()
-    _check_privileges()
-    _check_profiles(config_dir)
+    args = _parse_arguments()
+    setup_logging(args.verbose)
 
-    profiles = _get_profiles(config_dir)
-    ProxyServer(port, profiles)
+    _check_privileges()
+    _check_profiles(args.config_dir)
+
+    profiles = _get_profiles(args.config_dir)
+    ProxyServer(args.port, profiles)
 
     knockknock.daemonize.createDaemon()
 

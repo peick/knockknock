@@ -5,6 +5,7 @@ import os
 import sys
 
 import knockknock.daemonize
+from knockknock.cli.log_setup import setup_logging
 from knockknock.knock_watcher import KnockWatcher
 from knockknock.log_file import LogFile
 from knockknock.port_opener import PortOpener
@@ -24,10 +25,11 @@ def _parse_arguments():
     parser.add_argument('-f', '--foreground',
                         action='store_true',
                         help='Run in foreground.')
+    parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
 
-    return (args.config_dir, args.foreground)
+    return args
 
 
 def _check_privileges():
@@ -61,17 +63,18 @@ def _handle_knocks(profiles):
 
 
 def main():
-    (config_dir, foreground) = _parse_arguments()
+    args = _parse_arguments()
+    setup_logging(args.verbose)
 
     _check_privileges()
-    _check_configuration(config_dir)
+    _check_configuration(args.config_dir)
 
-    profiles = Profiles(config_dir)
+    profiles = Profiles(args.config_dir)
 
     if profiles.is_empty():
         print 'WARNING: Running knockknock-daemon without any active profiles.'
 
-    if not foreground:
+    if not args.foreground:
         knockknock.daemonize.createDaemon()
 
     _handle_knocks(profiles)
